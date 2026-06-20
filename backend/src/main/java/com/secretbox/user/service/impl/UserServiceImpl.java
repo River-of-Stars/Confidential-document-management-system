@@ -1,7 +1,6 @@
 package com.secretbox.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.secretbox.common.exception.BusinessException;
 import com.secretbox.role.enums.RoleEnum;
 import com.secretbox.user.dto.UserCreateDTO;

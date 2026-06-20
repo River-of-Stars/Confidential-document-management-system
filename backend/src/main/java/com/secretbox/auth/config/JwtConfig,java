@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "jwt")
 public class JwtConfig {
-    private String secret = "defaultSecretKey2026!@#"; // 实际从配置文件读取
-    private Long expiration = 3600000L; // 1小时
-    private String header = "Authorization";
-    private String tokenPrefix = "Bearer ";
+    private String secret;
+    private Long expiration;
+    private String header;
+    private String tokenPrefix;
 }
