@@ -43,9 +43,12 @@ public class SM2KeyManager {
     public SM2KeyPair generateKeyPair(String keyId) {
         try {
             // 使用Hutool生成SM2密钥对
+            // 获取公私钥字节数组
             SM2 sm2 = SmUtil.sm2();
-            String privateKeyBase64 = Base64.encode(sm2.getPrivateKeyBytes());
-            String publicKeyBase64 = Base64.encode(sm2.getPublicKeyBytes());
+            byte[] privateKeyBytes = sm2.getPrivateKey().getEncoded();
+            byte[] publicKeyBytes = sm2.getPublicKey().getEncoded();
+            String privateKeyBase64 = Base64.encode(privateKeyBytes);
+            String publicKeyBase64 = Base64.encode(publicKeyBytes);
             
             SM2KeyPair keyPair = new SM2KeyPair(privateKeyBase64, publicKeyBase64);
             keyPair.setKeyId(keyId);

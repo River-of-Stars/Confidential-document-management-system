@@ -16,3 +16,4 @@ public interface UserService {
     User getUserById(Long userId);
     List<User> listUsers(String keyword);
     void resetPassword(Long userId, String newPassword);
+}

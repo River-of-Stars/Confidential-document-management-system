@@ -19,7 +19,7 @@
     <description>中小企业保密文件管理系统 - 后端</description>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <mybatis-plus.version>3.5.3.1</mybatis-plus.version>
         <hutool.version>5.8.23</hutool.version>
         <jjwt.version>0.11.5</jjwt.version>

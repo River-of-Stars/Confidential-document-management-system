@@ -1,13 +1,13 @@
 package com.secretbox.user.dto;
 
 import lombok.Data;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotBlank;
 
 @Data
-public class UserUpdateDTO {
-    private Long id;
-    private String realName;
-    private String email;
-    private String phone;
-    private String department;
-    private Integer status; // 1启用 0禁用
+public class UserRoleAssignDTO {
+    @NotNull
+    private Long userId;
+    @NotBlank
+    private String roleCode;
 }
