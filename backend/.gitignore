@@ -1,0 +1,12 @@
+# Maven输出目录
+target/
+# class字节码文件
+*.class
+# IDE缓存
+.vscode/
+.idea/
+# 系统垃圾文件
+.DS_Store
+Thumbs.db
+# 日志文件
+*.log
