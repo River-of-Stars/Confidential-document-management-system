@@ -1,0 +1,99 @@
+# ==================== SpringBoot 核心配置 ====================
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  profiles:
+    active: dev  # 默认使用开发环境（SQLite），可切换为 mysql
+
+  # ========== Jackson 序列化配置 ==========
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+
+  # ========== 文件上传限制 ==========
+  servlet:
+    multipart:
+      max-file-size: 1024MB
+      max-request-size: 1024MB
+
+  # ========== 数据源配置（多环境适配） ==========
+  datasource:
+    # 默认使用 SQLite（单机离线模式）
+    driver-class-name: org.sqlite.JDBC
+    url: jdbc:sqlite:./data/secretbox.db
+    username:
+    password:
+
+  # ========== Redis 配置（缓存登录凭证/权限） ==========
+  redis:
+    host: localhost
+    port: 6379
+    password:
+    database: 0
+    timeout: 5000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+  # ========== RabbitMQ 配置（异步日志队列） ==========
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    listener:
+      simple:
+        concurrency: 1
+        max-concurrency: 5
+        prefetch: 1
+
+# ==================== MyBatis-Plus 配置 ====================
+mybatis-plus:
+  # 实体类扫描包
+  type-aliases-package: com.secretbox.*.entity
+  # Mapper XML 文件位置
+  mapper-locations: classpath*:mapper/**/*.xml
+  configuration:
+    # 开启驼峰命名转换
+    map-underscore-to-camel-case: true
+    # 开启日志（调试时可开启，生产环境关闭）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      # 主键自增
+      id-type: auto
+      # 逻辑删除字段（后续可扩展）
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# ==================== JWT 配置 ====================
+jwt:
+  # ⚠️ 生产环境务必替换为自己的强密钥（至少32位）
+  secret: your-256-bit-secret-key-for-jwt-please-change-in-production-123456
+  expiration: 3600000      # 1小时（单位毫秒），超时强制下线
+  header: Authorization
+  token-prefix: Bearer 
+
+# ==================== 国密加密配置 ====================
+crypto:
+  # 密钥存储路径（相对于运行目录）
+  key-store-path: ./keys
+  # SM4 配置
+  sm4:
+    key-length: 128
+    work-mode: CBC
+    padding: PKCS5Padding
+
+# ==================== 日志配置 ====================
+logging:
+  level:
+    com.secretbox: debug
+    org.springframework.security: info
+    org.springframework.web: info
