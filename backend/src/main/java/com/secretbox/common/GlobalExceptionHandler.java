@@ -1,5 +1,5 @@
-package com.secretbox.common.exception;
-
+package com.secretbox.common;
+import com.secretbox.common.exception.BusinessException;
 import com.secretbox.common.result.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.BindException;
