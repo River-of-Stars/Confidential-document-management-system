@@ -2,7 +2,8 @@ package com.secretbox.user.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
-import java.time.LocalDateTime;
+
+import java.util.Date;
 
 @Data
 @TableName("user")
@@ -17,12 +18,12 @@ public class User {
     private String roleCode;
     private String department;
     private Integer status;           // 1启用 0禁用
-    private LocalDateTime lockedUntil;
+    private Date lockedUntil;         // 改为 Date
     private Integer loginFailCount;
-    private LocalDateTime lastLoginTime;
+    private Date lastLoginTime;       // 改为 Date
     private String createdBy;
     @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createdTime;
+    private Date createdTime;         // 改为 Date
     @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updatedTime;
+    private Date updatedTime;         // 改为 Date
 }

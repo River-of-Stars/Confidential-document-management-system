@@ -61,11 +61,11 @@ public class SecurityConfig {
             .and()
             .authorizeHttpRequests(auth -> auth
                 // 公开接口
-                .antMatchers("/api/auth/**", "/api/public/**").permitAll()
+                .antMatchers("/auth/**", "/public/**","/test/**").permitAll()
                 // 角色权限控制
-                .antMatchers("/api/admin/**").hasRole("SUPER_ADMIN")
-                .antMatchers("/api/secretary/**").hasAnyRole("SUPER_ADMIN", "DEPT_SECRETARY")
-                .antMatchers("/api/user/**").authenticated()
+                .antMatchers("/admin/**").hasRole("SUPER_ADMIN")
+                .antMatchers("/secretary/**").hasAnyRole("SUPER_ADMIN", "DEPT_SECRETARY")
+                .antMatchers("/user/**").authenticated()
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())

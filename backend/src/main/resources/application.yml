@@ -95,5 +95,5 @@ crypto:
 logging:
   level:
     com.secretbox: debug
-    org.springframework.security: info
+    org.springframework.security: DEBUG
     org.springframework.web: info

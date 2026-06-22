@@ -18,9 +18,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -55,7 +56,7 @@ public class AuthController {
             String token = jwtService.generateToken(username, user.getRoleCode());
 
             // 更新最后登录时间
-            user.setLastLoginTime(LocalDateTime.now());
+            user.setLastLoginTime(new Date());
             userMapper.updateById(user);
 
             return Result.success(new LoginResponse(token, user.getRoleCode(), user.getRealName()));
