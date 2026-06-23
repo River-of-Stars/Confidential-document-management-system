@@ -53,7 +53,7 @@ public class AuthController {
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<User>()
                     .eq(User::getUsername, username)
             );
-            String token = jwtService.generateToken(username, user.getRoleCode());
+            String token = jwtService.generateToken(username, user.getId(), user.getRoleCode(), user.getDepartment());
 
             // 更新最后登录时间
             user.setLastLoginTime(new Date());

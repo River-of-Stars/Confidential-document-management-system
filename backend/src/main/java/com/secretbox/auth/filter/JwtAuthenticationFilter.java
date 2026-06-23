@@ -1,12 +1,12 @@
 package com.secretbox.auth.filter;
 
+import com.secretbox.auth.model.SecretBoxUserDetails;
 import com.secretbox.auth.service.JwtService;
-import com.secretbox.auth.service.UserDetailsServiceImpl;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -23,11 +23,12 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserDetailsServiceImpl userDetailsService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-                                    FilterChain chain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+        // 获取请求头中的 Authorization
         final String authHeader = request.getHeader("Authorization");
         String username = null;
         String jwt = null;
@@ -41,15 +42,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
+        // 如果存在 username 且当前上下文未认证
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             if (jwtService.validateToken(jwt, username)) {
+                // 从 Token 中提取额外信息
+                Claims claims = jwtService.extractAllClaims(jwt);
+                Long userId = claims.get("userId", Long.class);
+                String role = claims.get("role", String.class);
+                String department = claims.get("department", String.class);
+
+                // 构建自定义 UserDetails
+                SecretBoxUserDetails userDetails = new SecretBoxUserDetails(
+                        userId,
+                        username,
+                        "",  // 密码无需填充
+                        role,
+                        department,
+                        "",  // realName 可从数据库查，但此处简化为空
+                        true
+                );
+
+                // 创建认证 Token
                 UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                // 设置到 SecurityContext
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                log.debug("用户认证成功: {}", username);
             }
         }
-        chain.doFilter(request, response);
+
+        filterChain.doFilter(request, response);
     }
 }

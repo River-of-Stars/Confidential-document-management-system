@@ -28,9 +28,11 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(String username, String roleCode) {
+    public String generateToken(String username, Long userId, String roleCode, String department) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
         claims.put("role", roleCode);
+        claims.put("department", department);
         return createToken(claims, username);
     }
 
@@ -63,7 +65,8 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    private Claims extractAllClaims(String token) {
+    // 改为 public
+    public Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
