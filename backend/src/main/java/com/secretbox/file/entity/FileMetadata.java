@@ -9,6 +9,7 @@ import java.util.Date;
 public class FileMetadata {
     @TableId(type = IdType.AUTO)
     private Long id;
+    private String iv;  // 加密使用的IV（Base64）
     private String fileName;
     private Long fileSize;
     private String uploader;       // 上传人用户名
