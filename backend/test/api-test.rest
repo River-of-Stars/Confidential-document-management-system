@@ -56,3 +56,137 @@ Authorization: Bearer {{token}}
 # 然后测试以下接口
 GET http://localhost:8080/api/test/employee
 Authorization: Bearer {{token}}
+
+
+### ============================================================
+###  阶段3：文件加密存储功能测试
+### ============================================================
+
+### 1. 先登录获取 Token（使用已有admin账号）
+# @name login
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+    "username": "admin",
+    "password": "admin123"
+}
+
+### 保存 Token 到环境变量
+@token = {{login.response.body.data.token}}
+
+### ============================================================
+###  文件上传测试
+### ============================================================
+
+### 2. 上传普通文件（默认密级：内部）
+POST http://localhost:8080/api/file/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="测试文档.txt"
+Content-Type: text/plain
+
+这是测试文件内容，用于验证SM4加密上传功能。
+------WebKitFormBoundary--
+
+### 3. 上传机密文件（指定密级为机密）
+POST http://localhost:8080/api/file/upload?classification=3
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="机密报告.pdf"
+Content-Type: application/pdf
+
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources 4 0 R /MediaBox [0 0 612 792] /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Font << /F1 6 0 R >> >>
+endobj
+5 0 obj
+<< /Length 44 >>
+stream
+BT /F1 24 Tf 100 700 Td (机密内容) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 7
+...
+------WebKitFormBoundary--
+
+### ============================================================
+###  文件下载测试
+### ============================================================
+
+### 4. 下载文件（需要替换 fileId 为实际上传返回的ID）
+# 请先执行上传，从响应中获取 fileId，然后替换下面的 1
+GET http://localhost:8080/api/file/download/1
+Authorization: Bearer {{token}}
+
+### ============================================================
+###  文件删除测试
+### ============================================================
+
+### 5. 删除文件（需要替换 fileId）
+# 只有上传人或管理员可删除
+DELETE http://localhost:8080/api/file/delete/1
+Authorization: Bearer {{token}}
+
+### ============================================================
+###  权限测试（使用普通员工账号）
+### ============================================================
+
+### 6. 创建普通员工用户（若未创建）
+POST http://localhost:8080/api/user/create
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "username": "testuser",
+    "password": "123456",
+    "realName": "测试员工",
+    "roleCode": "EMPLOYEE",
+    "department": "研发部"
+}
+
+### 7. 以普通员工身份登录
+# @name employeeLogin
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+    "username": "testuser",
+    "password": "123456"
+}
+
+@empToken = {{employeeLogin.response.body.data.token}}
+
+### 8. 普通员工尝试下载机密文件（应返回403权限不足）
+# 请将 fileId 替换为之前上传的机密文件ID
+GET http://localhost:8080/api/file/download/1
+Authorization: Bearer {{empToken}}
+
+### 9. 普通员工上传文件
+POST http://localhost:8080/api/file/upload
+Authorization: Bearer {{empToken}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="员工文档.txt"
+Content-Type: text/plain
+
+这是普通员工上传的测试文件。
+------WebKitFormBoundary--
