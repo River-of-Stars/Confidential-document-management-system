@@ -66,6 +66,7 @@ public class SecurityConfig {
                 .antMatchers("/admin/**").hasRole("SUPER_ADMIN")
                 .antMatchers("/secretary/**").hasAnyRole("SUPER_ADMIN", "DEPT_SECRETARY")
                 .antMatchers("/user/**").authenticated()
+                .antMatchers("/file/**").authenticated()  // 所有文件接口需登录
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
