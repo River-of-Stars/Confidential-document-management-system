@@ -133,7 +133,7 @@ xref
 
 ### 4. 下载文件（需要替换 fileId 为实际上传返回的ID）
 # 请先执行上传，从响应中获取 fileId，然后替换下面的 1
-GET http://localhost:8080/api/file/download/1
+GET http://localhost:8080/api/file/download/7
 Authorization: Bearer {{token}}
 
 ### ============================================================
@@ -142,7 +142,7 @@ Authorization: Bearer {{token}}
 
 ### 5. 删除文件（需要替换 fileId）
 # 只有上传人或管理员可删除
-DELETE http://localhost:8080/api/file/delete/1
+DELETE http://localhost:8080/api/file/delete/6
 Authorization: Bearer {{token}}
 
 ### ============================================================
@@ -176,7 +176,7 @@ Content-Type: application/json
 
 ### 8. 普通员工尝试下载机密文件（应返回403权限不足）
 # 请将 fileId 替换为之前上传的机密文件ID
-GET http://localhost:8080/api/file/download/1
+GET http://localhost:8080/api/file/download/10
 Authorization: Bearer {{empToken}}
 
 ### 9. 普通员工上传文件

@@ -25,6 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.UUID;
+import cn.hutool.core.codec.Base64;
 
 @Slf4j
 @Service
@@ -61,6 +62,7 @@ public class FileService {
         String encryptedData = sm4Util.encryptBytes(plainBytes, keyBase64, null);
         // 加密数据格式: IV_BASE64:CIPHER_BASE64，我们拆分获取密文
         String[] parts = encryptedData.split(":");
+        String ivBase64 = parts[0];   
         byte[] cipherBytes = cn.hutool.core.codec.Base64.decode(parts[1]);
 
         // 上传到MinIO
@@ -88,6 +90,7 @@ public class FileService {
         metadata.setClassification(classificationLevel != null ? classificationLevel : FileClassification.INTERNAL.getLevel());
         metadata.setSm3Hash(originalHash);
         metadata.setMinioObjectName(objectName);
+        metadata.setIv(ivBase64); 
         metadata.setEncryptKey(keyBase64);  // 实际生产需加密存储
         metadata.setContentType(contentType);
         fileMetadataMapper.insert(metadata);
@@ -105,49 +108,61 @@ public class FileService {
      * 下载文件：校验权限，从MinIO获取密文，解密后返回流
      */
     public InputStream downloadFile(Long fileId) throws Exception {
-        // 获取元数据
-        FileMetadata metadata = fileMetadataMapper.selectById(fileId);
-        if (metadata == null) {
-            throw new RuntimeException("文件不存在");
-        }
-
-        // 权限校验
-        checkPermission(metadata);
-
-        // 从MinIO下载密文
-        try (InputStream minioStream = minioClient.getObject(
+    FileMetadata metadata = fileMetadataMapper.selectById(fileId);
+    if (metadata == null) {
+        throw new RuntimeException("文件不存在");
+    }
+    checkPermission(metadata);
+    
+    log.info("开始下载文件，fileId: {}, objectName: {}, iv: {}", fileId, metadata.getMinioObjectName(), metadata.getIv());
+    
+    // 从MinIO获取对象
+    InputStream minioStream = null;
+    try {
+        minioStream = minioClient.getObject(
                 GetObjectArgs.builder()
                         .bucket(bucketName)
                         .object(metadata.getMinioObjectName())
                         .build()
-        )) {
-            // 将密文全部读入内存（若文件过大可流式解密，此处简化）
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buffer = new byte[8192];
-            int len;
-            while ((len = minioStream.read(buffer)) != -1) {
-                baos.write(buffer, 0, len);
-            }
-            byte[] cipherBytes = baos.toByteArray();
-
-            // 构造加密数据格式（IV:CIPHER）
-            // 我们需要IV，但之前存储时IV是随机生成的，并未单独存储。我们需要从密文格式中提取。
-            // 由于我们存储的是完整的加密数据（IV:CIPHER），但我们只存了CIPHER，IV丢失。
-            // 为了修复，我们应该将完整的加密数据（IV:CIPHER）整体存入，或分别存储。
-            // 简化方案：在加密时，我们将IV和密文分开存储，或者存储完整的密文。
-            // 修改上传逻辑：存储完整的加密文本（IV:CIPHER）到MinIO？但这样MinIO存储的是文本，不是二进制。
-            // 更好的做法：将IV与密文拼接存储。但我们现在已有代码存储的是纯密文，没有IV。
-            // 为了快速修正，我们在上传时保存IV到数据库。修改FileMetadata增加字段iv。
-            // 由于我们正在编写，直接调整：
-            // 在上传时，我们将加密后的完整数据（IV:BASE64）整体存储到MinIO，即存储的是文本格式，但这样不是二进制流。
-            // 更好的做法：存储二进制，但需要包含IV。我们可将IV和密文拼接（IV[16] + cipher）作为字节数组存储。
-            // 但为了简单，我们可在数据库中存储IV，上传时只存储密文，下载时从数据库取IV，然后拼接。
-            // 因为我们已经修改，重新生成代码。
-            // 为此，我将调整FileMetadata实体，增加iv字段，并在上传时保存。
-        }
-        // ... 完整实现见下方
-        return null;
+        );
+    } catch (Exception e) {
+        log.error("从MinIO获取对象失败", e);
+        throw new RuntimeException("从MinIO下载文件失败: " + e.getMessage(), e);
     }
+    
+    if (minioStream == null) {
+        throw new RuntimeException("MinIO返回空流，文件可能不存在");
+    }
+    
+    // 读取密文到内存
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    byte[] buffer = new byte[8192];
+    int len;
+    try {
+        while ((len = minioStream.read(buffer)) != -1) {
+            baos.write(buffer, 0, len);
+        }
+    } catch (Exception e) {
+        log.error("读取密文流失败", e);
+        throw new RuntimeException("读取密文失败", e);
+    } finally {
+        minioStream.close();
+    }
+    byte[] cipherBytes = baos.toByteArray();
+    log.info("密文大小: {}", cipherBytes.length);
+    
+    // 检查IV是否为空
+    if (metadata.getIv() == null || metadata.getIv().isEmpty()) {
+        throw new RuntimeException("文件加密IV缺失，无法解密");
+    }
+    
+    // 解密
+    String encryptedData = metadata.getIv() + ":" + Base64.encode(cipherBytes);
+    byte[] plainBytes = sm4Util.decryptBytes(encryptedData, metadata.getEncryptKey());
+    log.info("解密成功，明文大小: {}", plainBytes.length);
+    
+    return new ByteArrayInputStream(plainBytes);
+}
 
     // 权限校验方法
     private void checkPermission(FileMetadata metadata) {
